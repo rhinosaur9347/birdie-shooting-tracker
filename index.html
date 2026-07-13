@@ -1,4 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#14181D">
+<title>Birdie's Shooting Tracker</title>
 <style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #14181D;
+    min-height: 100vh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
   @import url('https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
   .st-app * { box-sizing: border-box; }
@@ -157,6 +174,8 @@
     box-shadow: 0 6px 18px rgba(0,0,0,0.45);
   }
 </style>
+</head>
+<body>
 
 <div class="st-app" id="stApp">
   <div id="stView"></div>
@@ -437,7 +456,7 @@
 
     if (kind === 'disconnectSheet') {
       closeModal();
-      try { await storage.delete(SHEETS_URL_KEY, false); } catch (e) { /* ignore */ }
+      try { await storage.set(SHEETS_URL_KEY, '', false); } catch (e) { /* ignore */ }
       renderHome();
       return;
     }
@@ -595,13 +614,19 @@
     return { sessions: recs.length, totalMakes, totalAttempts, cat };
   }
 
+  // Baked-in default so the app is connected out of the box, no manual
+  // entry needed. An explicit disconnect stores '' to override this
+  // (see confirmModal's disconnectSheet branch) so disconnecting sticks.
+  const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyzfyF7bBPsmlUqI_MuafmUQJr5sMYvVXEMMgzPGEZBj0aC6ch9I1DwalkGHpIJdPjyNg/exec';
+
   async function getSheetsUrl() {
     try {
       const r = await storage.get(SHEETS_URL_KEY, false);
-      return (r && r.value) || null;
-    } catch (e) {
-      return null;
-    }
+      if (r && typeof r.value === 'string') {
+        return r.value === '' ? null : r.value;
+      }
+    } catch (e) { /* never set on this device, fall through to default */ }
+    return DEFAULT_SHEETS_URL || null;
   }
 
   async function pushToSheet(record, url) {
@@ -818,3 +843,5 @@
   renderApp();
 })();
 </script>
+</body>
+</html>
